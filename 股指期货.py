@@ -16,7 +16,7 @@ import pandas as pd
 import numpy as np
 import time
 
-def select_futures(now_time,name):
+def select_futures(datas,now_time,name):
   stock_futures = pd.DataFrame()
   
   for ind in datas.index.tolist():
@@ -51,7 +51,7 @@ def main():
   
     
     now_time = pd.datetime.now()
-    stock_futures = select_futures(now_time,name)
+    stock_futures = select_futures(datas,now_time,name)
  
     res = main_futures('2022-03-28 9:30:00','2022-03-28 9:45:00',stock_futures)
     print(res)
