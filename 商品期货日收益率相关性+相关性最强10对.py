@@ -54,9 +54,8 @@ def profit():
         else:
           panel = jq.get_price(dominant_future_dates.loc[today,'code'], frequency='daily', start_date=last_day, end_date=last_day,
                               fields=['close'])
-          dominant_future_dates.loc[today, ['change', 'last_close_price']] = [True,panel.loc[last_day,'close']]
-      dominant_future_dates['yield']=dominant_future_dates['close']/dominant_future_dates['last_close_price']-1
-    path_to_store = os.path.join('/content/drive/MyDrive/new2/',name+'.csv')
+          dominant_future_dates.loc[today, ['change', 'last_close_price']] = [True,panel.loc[last_day,'close']
+    path_to_store = os.path.join('/content/drive/MyDrive/new1/',name+'.csv')
     dominant_future_dates.to_csv(path_to_store,index=True)
 
 #计算所有大宗期货的收益率并保存
