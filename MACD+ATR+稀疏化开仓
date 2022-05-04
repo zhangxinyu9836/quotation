@@ -265,11 +265,11 @@ def MACD_BOTH_ATR(relate_twin, cost):
 def main():
     relate_list = os.listdir('/content/drive/MyDrive/new3')
     cost = pd.read_excel('/content/drive/MyDrive/cost.xlsx', index_col=0)
-    # for name in relate_list:
-    # print(name)
-    # relate_twin= name.split('.')[0]
-    relate_twin = 'P_Y'
-    MACD_BOTH_ATR(relate_twin, cost)
+    for name in relate_list:
+        #print(name)
+        relate_twin= name.split('.')[0]
+        #relate_twin = 'P_Y'
+        MACD_BOTH_ATR(relate_twin, cost)
 
 
 if __name__ == '__main__':
