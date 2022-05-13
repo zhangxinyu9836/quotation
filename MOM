@@ -41,7 +41,7 @@ def mkt_plot(quotes, save_path, strategy, sec):  # quotes:行情数据-Dateframe
     ax1.plot(quotes.clean, color='b', linewidth=__linewidth__, label='price_diff')  # 画价差曲线
   
     MOM = quotes.MOM                                                             #改
-    MAMOM = quotes.MAMOM
+    #MAMOM = quotes.MAMOM
 
     ax2 = ax1.twinx()  # 增加一根y轴
     ax2.set_xlim(-1, len(quotes) + 1)
@@ -49,7 +49,7 @@ def mkt_plot(quotes, save_path, strategy, sec):  # quotes:行情数据-Dateframe
     ax2.set_xticklabels([(quotes.index[i]) for i in ax2.get_xticks()], rotation=20)
     
     ax2.plot(MOM, color=__color_yellow__, linewidth=__linewidth__, label='MOM')                                    #改
-    ax2.plot(MAMOM, color=__color_purple__, linewidth=__linewidth__, label='MAMOM')                                    #改
+    #ax2.plot(MAMOM, color=__color_purple__, linewidth=__linewidth__, label='MAMOM')                                    #改
     
     #ax2.axhline(50.0, color="red", linestyle='--')
     #ax2.axhline(-50.0, color="red", linestyle='--')
@@ -141,8 +141,8 @@ def SMA(relate_twin, strategy, cost):
 
     MOM = ta.MOM(relate.clean, timeperiod=6)                                                                      #改
     relate['MOM'] = MOM
-    MAMOM = ta.SMA(relate.MOM, timeperiod = 12)                                                                             #改
-    relate['MAMOM'] = MAMOM                                                                                #改
+    #MAMOM = ta.SMA(relate.MOM, timeperiod = 12)                                                                             #改
+    #relate['MAMOM'] = MAMOM                                                                                #改
 
     # 计算信号
     for idx in range(len(relate.index)):
@@ -150,13 +150,13 @@ def SMA(relate_twin, strategy, cost):
         if idx > 0:
             today, yesterday = relate.index[idx], relate.index[idx - 1]
             sma1 = relate.loc[today, 'MOM']
-            sma2 = relate.loc[today, 'MAMOM']                                                                 #改
+            #sma2 = relate.loc[today, 'MAMOM']                                                                 #改
 
             relate.loc[today, 'signal'] = 0
-            if sma1 and sma2:
-                if sma1 > sma2 and (pd.isnull(relate.loc[yesterday, 'MOM']) or relate.loc[yesterday, 'MOM'] <= relate.loc[yesterday, 'MAMOM']):       #改
+            if sma1:
+                if sma1 > 0 and (pd.isnull(relate.loc[yesterday, 'MOM']) or relate.loc[yesterday, 'MOM'] <= 0):       #改
                   relate.loc[today, 'signal'] = 1
-                elif sma1 < sma2 and (pd.isnull(relate.loc[yesterday, 'MOM']) or relate.loc[yesterday, 'MOM'] >= relate.loc[yesterday, 'MAMOM']):      #改
+                elif sma1 < 0 and (pd.isnull(relate.loc[yesterday, 'MOM']) or relate.loc[yesterday, 'MOM'] >= 0):      #改
                   relate.loc[today, 'signal'] = -1
                 
 
