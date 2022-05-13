@@ -1,4 +1,4 @@
-#KDJ
+#RSI
 def withdraw(relate):
     _dp = 0  # 使用 _dp 表示 i 点的最大回撤
     i_high = 0  # 遍历时，0 ~ i - 1 中最高的点的索引，注意是索引
