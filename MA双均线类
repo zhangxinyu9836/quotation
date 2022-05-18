@@ -43,7 +43,7 @@ def mkt_plot(quotes, save_path, strategy, sec):  # quotes:行情数据-Dateframe
     sma2 = ta.SMA(np.array(quotes.clean), timeperiod=10)  # 10日简单移动均线
 
     ax1.plot(sma1, color=__color_yellow__, linewidth=__linewidth__, label='5_day Simple Moving Average')
-    ax1.plot(sma2, color=__color_purple__, linewidth=__linewidth__, label='10-day Weighted Moving Average')
+    ax1.plot(sma2, color=__color_purple__, linewidth=__linewidth__, label='10-day Simple Moving Average')
 
     # 图例
     ax1.legend(loc='upper left')
