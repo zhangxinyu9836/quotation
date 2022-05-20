@@ -129,7 +129,7 @@ def SMA(relate_twin, strategy, cost):
     code_1 = code_1.dropna()
     code_2 = code_2.dropna()
 
-    sma1 = ta.SAR(relate.high, relate.low, acceleration=0, maximum=0)  # 5日简单移动均线
+    sma1 = ta.SAR(relate.high, relate.low)  # 5日简单移动均线
     #sma2 = ta.TRIMA(np.array(relate.clean), timeperiod=10)  # 10日简单移动均线
     relate['sar'] = sma1
     #relate['fama'] = fama
