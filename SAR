@@ -1,0 +1,222 @@
+def withdraw(relate):
+    _dp = 0  # 使用 _dp 表示 i 点的最大回撤
+    i_high = 0  # 遍历时，0 ~ i - 1 中最高的点的索引，注意是索引
+
+    # 全局最大回撤和对应的最高点和最低点的索引，注意是索引
+    g_withdraw, g_high, g_low = float('-inf'), -1, -1
+    arr = relate.profit_history.tolist()
+    for i in range(1, len(arr)):
+        # 注意：此处求的是
+        if arr[i_high] < arr[i - 1]:  # 若 0 ~ i - 1 中最高的点小于当前点
+            i_high = i - 1  # 0 ~ i - 1 中最高的点的索引
+
+        _dp = arr[i_high] - arr[i]  # _dp 表示 i 点的最大回撤
+        if _dp > g_withdraw:  # 找到新的最大回撤，更新三个值
+            g_withdraw = _dp
+            g_high = i_high
+            g_low = i
+
+    return g_withdraw, g_high, g_low
+
+
+def mkt_plot(quotes, save_path, strategy, sec):  # quotes:行情数据-Dateframe类型    sec：标题
+    __color_balck__, __color_green__ = '#0F0F0F', '#00FFFF'
+    __color_yellow__, __color_purple__ = '#EE9A00', '#9900CC'
+    __linewidth__ = 2
+
+    fig = plt.figure(figsize=(11, 5))
+
+    ax1 = fig.add_axes([0, 1, 1, 1])
+    ax1.set_title(sec, fontsize=15)
+
+    ax1.grid(True, axis='y')
+    ax1.set_xlim(-1, len(quotes) + 1)
+    ax1.set_title("Price_diff", fontsize=15, loc='left', color='r')
+
+    # 设置x轴标签
+    ax1.set_xticks(range(0, len(quotes), int(len(quotes) / 5)))  # 位置
+    ax1.set_xticklabels([(quotes.index[i]) for i in ax1.get_xticks()], rotation=20)  # 标签内容
+
+    ax1.plot(quotes.clean, color='b', linewidth=__linewidth__, label='price_diff')  # 画价差曲线
+
+    sma1 = quotes.sar  # 5日简单移动均线
+    #sma2 = quotes.fama  # 10日简单移动均线
+
+    ax1.plot(sma1, color=__color_yellow__, linewidth=__linewidth__, label='SAR')
+    #ax1.plot(sma2, color=__color_purple__, linewidth=__linewidth__, label='FAMA')
+
+    # 图例
+    ax1.legend(loc='upper left')
+
+    fig.savefig(os.path.join(save_path, strategy + '_signal.png'), dpi=1000, bbox_inches='tight')
+    plt.close("all")
+
+
+def mkt_profit_plot(relate, save_path, sec, strategy, scatter):
+    __color_balck__, __color_green__ = '#0F0F0F', '#00FFFF'
+    __color_yellow__, __color_purple__ = '#EE9A00', '#9900CC'
+    __linewidth__ = 2
+    [g_withdraw, max_x, min_x] = scatter
+    fig1 = plt.figure(figsize=(11, 5))
+    ax11 = fig1.add_axes([0, 1, 1, 1])
+    print(max_x)
+
+    ax11.set_title(
+        sec + '---' + 'the largest withdraw is {:.2%}'.format(g_withdraw / relate.profit_history.iloc[max_x]),
+        fontsize=15)
+
+    ax11.grid(True, axis='y')
+    ax11.set_xlim(-1, len(relate) + 1)
+    ax11.set_title("profit_history", fontsize=15, loc='left', color='r')
+    # 设置x轴标签
+    ax11.set_xticks(range(0, len(relate), int(len(relate) / 5)))  # 位置
+    ax11.set_xticklabels([(relate.index[i]) for i in ax11.get_xticks()], rotation=20)  # 标签内容
+    ax11.plot(relate.profit_history, color=__color_balck__, linewidth=__linewidth__)
+    ax11.axhline(1.0, color="red", linestyle='--')
+    ax11.legend(loc='upper left')
+    min_y, max_y = relate.profit_history.iloc[min_x], relate.profit_history.iloc[max_x]
+    plt.scatter(min_x, relate.profit_history.iloc[min_x], color='r')  # 标记最低点
+    plt.scatter(max_x, relate.profit_history.iloc[max_x], color='r')  # 标记最高点
+    plt.annotate(f'bottom:{relate.profit_history.index[min_x]}', xytext=(min_x, min_y), xy=(min_x, min_y))  # 标记提示
+    plt.annotate(f'peak:{relate.profit_history.index[max_x]}', xytext=(max_x, max_y), xy=(max_x, max_y))  # 标记提示
+
+    plt.plot([min_x, max_x], [min_y, max_y], color='b', linestyle='--')
+
+    fig1.savefig(os.path.join(save_path, strategy + 'profit_history.png'), dpi=1000, bbox_inches='tight')
+    plt.close("all")
+
+
+def window(pd, length, end_ind):
+    if end_ind - length + 1 < 0:
+        pd1 = pd.clean.iloc[0:end_ind + 1]
+    else:
+        pd1 = pd.clean.iloc[(end_ind - length + 1):end_ind + 1]
+    return [pd1.min(), pd1.max(), pd.clean.iloc[end_ind]]
+
+
+def ratio_data(code):  # 计算收盘比值序列
+    path = os.path.join('/content/drive/MyDrive/new1', code + '.csv')
+    data = pd.read_csv(path, index_col=0)
+    index = data.index
+    for num in range(len(index)):
+        if num == 0:
+            data.loc[index[num], 'ratio'] = 1
+        if num > 0:
+            last_day, today = index[num - 1], index[num]
+            data.loc[today, 'ratio'] = data.loc[today, 'close'] / data.loc[today, 'last_close_price']
+    return data.ratio
+
+
+def make_dir(path):
+    if not os.path.exists(path):
+        os.mkdir(path)
+
+
+def SMA(relate_twin, strategy, cost):
+    relate = pd.read_csv(os.path.join('/content/drive/MyDrive/new3', relate_twin + '.csv'), index_col=0)
+    for idx in range(len(relate.index)):
+        today = relate.index[idx]
+        relate.loc[today, ['low', 'high', 'close']] = window(relate, 5, idx)
+    relate = relate.dropna()
+
+    if len(relate.index) == 0:
+        return
+    # print(relate.index[0])
+    [code1, code2] = relate_twin.split('_')
+    # print(code1, code2)
+    code_1 = pd.read_csv(os.path.join('/content/drive/MyDrive/new2', code1 + '.csv'), index_col=0)
+    code_2 = pd.read_csv(os.path.join('/content/drive/MyDrive/new2', code2 + '.csv'), index_col=0)
+    code_1 = code_1.dropna()
+    code_2 = code_2.dropna()
+
+    sma1 = ta.SAR(relate.high, relate.low, acceleration=0, maximum=0)  # 5日简单移动均线
+    #sma2 = ta.TRIMA(np.array(relate.clean), timeperiod=10)  # 10日简单移动均线
+    relate['sar'] = sma1
+    #relate['fama'] = fama
+
+    # 计算信号
+    for idx in range(len(relate.index)):
+        relate.loc[relate.index[idx], 'signal'] = 0
+        if idx > 0:
+            today, yesterday = relate.index[idx], relate.index[idx - 1]
+            sma1, sma2 = relate.loc[today, 'clean'], relate.loc[today, 'sar']
+
+            relate.loc[today, 'signal'] = 0
+            if sma1 and sma2:
+
+                if sma1 > sma2 and (pd.isnull(relate.loc[yesterday, 'clean']) or relate.loc[yesterday, 'clean'] <= relate.loc[yesterday, 'sar']):
+                    relate.loc[today, 'signal'] = 1
+                elif sma1 < sma2 and (pd.isnull(relate.loc[yesterday, 'clean']) or relate.loc[yesterday, 'clean'] >= relate.loc[yesterday, 'sar']):
+                    relate.loc[today, 'signal'] = -1
+
+    # 计算历史收益率
+    P_clean = ratio_data(code1)
+    Y_clean = ratio_data(code2)
+
+    gold_signal = False
+    dead_signal = False
+    gold_atr_threshold, dead_atr_threshold = 0, 0
+    for idx in range(len(relate.index)):
+        if idx == 0:
+            relate.loc[relate.index[idx], 'profit_history'] = 1
+            relate.loc[relate.index[idx], ['P_assert', 'Y_assert']] = [0.5, 0.5]
+        else:
+            P_cost = 3 * cost.loc[code1] / code_1.close.loc[today]
+            Y_cost = 3 * cost.loc[code2] / code_2.close.loc[today]
+            today, yesterday = relate.index[idx], relate.index[idx - 1]
+            relate.loc[today, 'profit_history'] = relate.loc[yesterday, 'profit_history']
+            relate.loc[today, ['P_assert', 'Y_assert']] = relate.loc[yesterday, ['P_assert', 'Y_assert']]
+            if gold_signal:
+                relate.loc[today, 'P_assert'] = relate.loc[yesterday, 'P_assert'] * P_clean.loc[today]
+                relate.loc[today, 'Y_assert'] = relate.loc[yesterday, 'Y_assert'] * (2 - Y_clean.loc[today])
+                relate.loc[today, 'profit_history'] = relate.loc[today, 'P_assert'] + relate.loc[today, 'Y_assert']
+            if dead_signal:
+                relate.loc[today, 'P_assert'] = relate.loc[yesterday, 'P_assert'] * (2 - P_clean.loc[today])
+                relate.loc[today, 'Y_assert'] = relate.loc[yesterday, 'Y_assert'] * Y_clean.loc[today]
+                relate.loc[today, 'profit_history'] = relate.loc[today, 'P_assert'] + relate.loc[today, 'Y_assert']
+            if relate.loc[today, 'signal'] == 1:
+                gold_signal = True
+                dead_signal = False
+                relate.loc[relate.index[idx], ['P_assert', 'Y_assert']] = [
+                    0.5 * relate.loc[today, 'profit_history'] * (1 - P_cost.iloc[0]),
+                    0.5 * relate.loc[today, 'profit_history'] * (1 - Y_cost.iloc[0])]
+                # relate.loc[relate.index[idx], ['P_assert', 'Y_assert']] = [0.5 * relate.loc[today, 'profit_history'], 0.5 * relate.loc[today, 'profit_history']]
+            if relate.loc[today, 'signal'] == -1:
+                gold_signal = False
+                dead_signal = True
+                relate.loc[relate.index[idx], ['P_assert', 'Y_assert']] = [
+                    0.5 * relate.loc[today, 'profit_history'] * (1 - P_cost.iloc[0]),
+                    0.5 * relate.loc[today, 'profit_history'] * (1 - Y_cost.iloc[0])]
+                # relate.loc[relate.index[idx], ['P_assert', 'Y_assert']] = [0.5 * relate.loc[today, 'profit_history'], 0.5 * relate.loc[today, 'profit_history']]
+
+    save_path = os.path.join('/content/drive/MyDrive/relate_future', relate_twin)
+    make_dir(save_path)
+    relate.to_csv(os.path.join(save_path, relate_twin + strategy + 'data.csv'), index=True)
+    g_withdraw, g_high, g_low = withdraw(relate)
+    mkt_plot(relate, save_path, strategy, relate_twin)
+    mkt_profit_plot(relate, save_path, relate_twin, strategy, [g_withdraw, g_high, g_low])
+
+
+def main():
+    relate_list1 = {'AG_AU','AL_CU','AL_ZN','B_M','BC_AL','BC_CU','BC_ZN','BU_EB','BU_EG','BU_PF','BU_TA','C_CS','CF_CY','CF_PF','CU_NI','CU_PB','CU_RU','CU_SN','CU_ZN'}
+    relate_list2 = {'EG_EB','FG_SA','HC_I','HC_J','HC_JM','I_J','I_JM','J_JM','L_EB','L_EG','L_PP','L_V','LU_BU','LU_PF','LU_PG','LU_TA','MA_EG','MA_L','MA_PP','MA_TA'}
+    relate_list3 = {'NI_SS','NR_CF','NR_RU','OI_P','OI_Y','PB_ZN','PF_EB','PF_EG','PF_L','PF_PG','PF_PP','PP_EB','PP_EG','PP_V','RB_FG','RB_I','RB_J','RB_JM','RM_B','RM_M'}
+    relate_list4 = {'SC_BU','SC_FU','SC_LU','SC_PF','SC_TA','SF_SM','TA_EB','TA_EG','TA_PF','TA_PG','TA_PP','ZC_J','ZC_JM'}
+    
+    cost = pd.read_excel('/content/drive/MyDrive/cost.xlsx', index_col=0)
+    for name in relate_list4:
+     print(name)
+     relate_twin = name
+     strategy = '_SAR_'
+     SMA(relate_twin, strategy, cost)
+    # try:
+    # MACD_BOTH_ATR(relate_twin, cost)
+    # except:
+    # print("error occurs:%s"%relate_twin)
+    #relate_twin = 'P_Y'
+    #strategy = '_SMA_'
+    #SMA(relate_twin, strategy, cost)
+
+
+if __name__ == '__main__':
+    main()
