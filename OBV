@@ -49,7 +49,7 @@ def mkt_plot(quotes, save_path, strategy, sec):  # quotes:行情数据-Dateframe
     ax2.set_xticks(range(0, len(quotes), int(len(quotes) / 5)))  # 位置
     ax2.set_xticklabels([(quotes.index[i]) for i in ax2.get_xticks()], rotation=20)
     
-    ax2.plot(sma1, color=__color_yellow__, linewidth=__linewidth__, label='ADOSC')                                    #改
+    ax2.plot(sma1, color=__color_yellow__, linewidth=__linewidth__, label='OBV')                                    #改
     ax2.plot(sma2, color=__color_purple__, linewidth=__linewidth__, label='MAVOLUME1')                                    #改
     ax2.plot(sma3, color=__color_green__, linewidth=__linewidth__, label='MAVOLUME2')
     #ax2.axhline(0.0, color="red", linestyle='--')     #一般20以下 超卖区                                         #改
