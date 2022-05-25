@@ -1,0 +1,24 @@
+import math
+import pandas as pd
+import numpy as np
+import os
+DATA1 = pd.DataFrame()
+DATA2 = pd.DataFrame()
+relate_list = ['AG_AU','AL_CU','AL_ZN','B_M','BC_AL','BC_CU','BC_ZN','BU_EB','BU_EG','BU_PF','BU_TA','C_CS','CF_CY','CF_PF','CU_NI','CU_PB','CU_RU','CU_SN','CU_ZN','EG_EB','FG_SA','HC_I','HC_J','HC_JM','HC_RB','I_J','I_JM','J_JM','L_EB','L_EG','L_PP','L_V','LU_BU','LU_PF','LU_PG','LU_TA','MA_EG','MA_L','MA_PP','MA_TA','NI_SS','NR_CF','NR_RU','OI_P','OI_Y','P_Y','PB_ZN','PF_EB','PF_EG','PF_L','PF_PG','PF_PP','PP_EB','PP_EG','PP_V','RB_FG','RB_I','RB_J','RB_JM','RM_B','RM_M','SC_BU','SC_FU','SC_LU','SC_PF','SC_TA','SF_SM','TA_EB','TA_EG','TA_PF','TA_PG','TA_PP','ZC_J','ZC_JM']
+strategy_list = ['SMA','EMA','WMA','DEMA','KAMA','MESA','MIDPOINT','SAR','TRIMA','BollingerBand+TR','BollingerBand+ATR','BollingerBand+NATR','MACD_','KDJ','APO','AROON','CCI','CMO','MOM','ROC','RSI','TRIX','AD+KDJ','ADOSC','OBV']    
+#relate_list = ['AG_AU','AL_CU']
+#strategy_list = ['SMA','EMA']
+ind = 0
+for strategy in strategy_list:
+  for relate in relate_list:
+    path = os.path.join('/content/drive/MyDrive/relate_future', relate, relate + '_'+ strategy + '_data.csv')
+    
+    data = pd.read_csv(path, index_col=0)
+    n = len(data.index)/250
+    AnnualReturn = pow(data.profit_history.iloc[-1],1/n)-1
+    dailyStd = (data.profit_history/data.profit_history.shift(-1)-1).std()  # 得到日度波动率
+    annualStd = dailyStd * math.sqrt(250)  # 得到年化波动率
+    SharpeRatio = AnnualReturn / annualStd
+    roll_max = data.profit_history.expanding().max()
+    MaxDrawdown = -1 * np.min(data.profit_history / roll_max - 1)
+    
