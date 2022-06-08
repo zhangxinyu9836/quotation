@@ -134,9 +134,9 @@ def IC_val(relate_list, strategy, time_aix):
             IC.loc[today, ['IC_pro_down','IC_sharpe','IC_sortino']] = [ic_pro_down, ic_sharpe, ic_sortino]
         day_index += 20
         
-    IC_mean_pro_down = IC['IC_pro_down'].abs().mean()
-    IC_mean_sharpe = IC['IC_sharpe'].abs().mean()
-    IC_mean_sortino = IC['IC_sortino'].abs().mean()
+    IC_mean_pro_down = IC['IC_pro_down'].mean()
+    IC_mean_sharpe = IC['IC_sharpe'].mean()
+    IC_mean_sortino = IC['IC_sortino'].mean()
     IC.loc['mean', ['IC_pro_down','IC_sharpe','IC_sortino']] = [IC_mean_pro_down, IC_mean_sharpe, IC_mean_sortino]
     #print(IC)
     #print(IC_mean_pro_down)
