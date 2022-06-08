@@ -1,0 +1,169 @@
+import numpy as np
+import pandas as pd
+import os
+import math
+
+def eval(relate, strategy, today):
+    path = os.path.join('E:/data/relate_future', relate, relate + '_' + strategy + '_data.csv')
+    data = pd.read_csv(path, index_col=0)
+    try:
+        if data.index[0] < today:
+            ind_list = data.index.tolist()
+            ind = ind_list.index(today)
+            if ind > 100:
+                n = 101 / 250
+                profit_history_ = data.profit_history.iloc[ind] / data.profit_history.iloc[ind - 101]
+                AnnualReturn = pow(profit_history_, 1 / n) - 1
+                roll_max = data.profit_history.iloc[(ind - 101):(ind + 1)].expanding().max()
+                MaxDrawdown = -1 * np.min(data.profit_history.iloc[(ind - 101):(ind + 1)] / roll_max - 1)
+                return AnnualReturn / MaxDrawdown
+            else:
+                return -float('inf')
+        else:
+            return -float('inf')
+    except:
+        return -float('inf')
+    
+def sharpe(relate, strategy, today):
+    path = os.path.join('E:/data/relate_future', relate, relate + '_' + strategy + '_data.csv')
+    data = pd.read_csv(path, index_col=0)
+    try:
+        if data.index[0] < today:
+            ind_list = data.index.tolist()
+            ind = ind_list.index(today)
+            if ind > 100:
+                n = 101 / 250
+                profit_history_ = data.profit_history.iloc[ind] / data.profit_history.iloc[ind - 101]
+                AnnualReturn = pow(profit_history_, 1 / n) - 1
+                dailyStd = (data.profit_history.iloc[(ind - 101):(ind + 1)]/data.profit_history.iloc[(ind - 101):(ind + 1)].shift(-1)-1).std()  # 得到日度波动率
+                annualStd = dailyStd * math.sqrt(250)  # 得到年化波动率
+                SharpeRatio = AnnualReturn / annualStd
+                return SharpeRatio
+            else:
+                return -float('inf')
+        else:
+            return -float('inf')
+    except:
+        return -float('inf')
+
+def sortino(relate, strategy, today):
+    path = os.path.join('E:/data/relate_future', relate, relate + '_' + strategy + '_data.csv')
+    data = pd.read_csv(path, index_col=0)
+    try:
+        if data.index[0] < today:
+            ind_list = data.index.tolist()
+            ind = ind_list.index(today)
+            if ind > 100:
+                n = 101 / 250
+                profit_history_ = data.profit_history.iloc[ind] / data.profit_history.iloc[ind - 101]
+                AnnualReturn = pow(profit_history_, 1 / n) - 1
+                df = data.profit_history.iloc[(ind - 101):(ind + 1)]/data.profit_history.iloc[(ind - 101):(ind + 1)].shift(-1)-1
+                dailyStd = df[df<0].std()  # 得到日度波动率
+                annualStd = dailyStd * math.sqrt(250)  # 得到年化波动率
+                sortino = AnnualReturn / annualStd
+                return sortino
+            else:
+                return -float('inf')
+        else:
+            return -float('inf')
+    except:
+        return -float('inf')
+
+def profit_val(relate, strategy, today):
+    path = os.path.join('E:/data/relate_future', relate, relate + '_' + strategy + '_data.csv')
+    data = pd.read_csv(path, index_col=0)
+    try:
+        if data.index[0] < today:
+            ind_list = data.index.tolist()
+            ind = ind_list.index(today)
+            if ind > 100:
+                if ind + 20 >= len(ind_list):
+                    profit_value = data.profit_history.iloc[-1] / data.profit_history.iloc[ind] - 1
+                    return profit_value
+                else:
+                    profit_value = data.profit_history.iloc[ind + 20] / data.profit_history.iloc[ind] - 1
+                    return profit_value
+            else:
+                return -float('inf')
+        else:
+            return -float('inf')
+    except:
+        return -float('inf')
+
+
+def IC_val(relate_list, strategy, time_aix):
+    day_index = 100
+    IC = pd.DataFrame()
+    
+    while day_index <= len(time_aix):
+        today = time_aix[day_index]
+        eval_list = []
+        profit_list = []
+        sharpe_list  =[]
+        sortino_list  =[]
+        for relate in relate_list:
+            eval_list.append(eval(relate, strategy, today))
+            profit_list.append(profit_val(relate, strategy, today))
+            sharpe_list.append(sharpe(relate, strategy, today))
+            sortino_list.append(sortino(relate, strategy, today))
+       
+        while -float('inf') in eval_list:
+            eval_list.remove(-float('inf'))
+        while -float('inf') in profit_list:
+            profit_list.remove(-float('inf'))
+        while -float('inf') in sharpe_list:
+            sharpe_list.remove(-float('inf'))
+        while -float('inf') in sortino_list:
+            sortino_list.remove(-float('inf'))
+             
+        if eval_list and profit_list and sharpe_list and sortino_list:
+            eval_list_sort = sorted(range(len(eval_list)), key=lambda k: eval_list[k], reverse=True)
+            #print(eval_list_sort)
+            profit_list_sort = sorted(range(len(profit_list)), key=lambda k: profit_list[k], reverse=True)
+            #print(profit_list_sort)
+            sharpe_list_sort = sorted(range(len(sharpe_list)), key=lambda k: sharpe_list[k], reverse=True)
+            sortino_list_sort = sorted(range(len(sortino_list)), key=lambda k: sortino_list[k], reverse=True)
+
+            e = pd.Series(eval_list_sort)
+            s = pd.Series(sharpe_list_sort)
+            st = pd.Series(sortino_list_sort)
+            p = pd.Series(profit_list_sort)
+            ic_pro_down = e.corr(p)
+            ic_sharpe = s.corr(p)
+            ic_sortino = st.corr(p)
+            IC.loc[today, ['IC_pro_down','IC_sharpe','IC_sortino']] = [ic_pro_down, ic_sharpe, ic_sortino]
+        day_index += 20
+        
+    IC_mean_pro_down = IC['IC_pro_down'].abs().mean()
+    IC_mean_sharpe = IC['IC_sharpe'].abs().mean()
+    IC_mean_sortino = IC['IC_sortino'].abs().mean()
+    IC.loc['mean', ['IC_pro_down','IC_sharpe','IC_sortino']] = [IC_mean_pro_down, IC_mean_sharpe, IC_mean_sortino]
+    #print(IC)
+    #print(IC_mean_pro_down)
+    #print(IC_mean_sharpe)
+    #print(IC_mean_sortino)
+    path = os.path.join('E:/data/IC', strategy +'_IC.csv')
+    IC.to_csv(path, index = True)
+
+def main():
+  #寻找时间节点
+  path = os.path.join('E:/data/relate_future', 'P_Y', 'P_Y_KDJ_data.csv')
+  data = pd.read_csv(path, index_col=0)
+  time_aix = data.index
+  
+  relate_list = ['AG_AU', 'AL_CU', 'AL_ZN', 'B_M', 'BC_AL', 'BC_CU', 'BC_ZN', 'BU_EB', 'BU_EG', 'BU_PF', 'BU_TA',
+                'C_CS', 'CF_CY', 'CF_PF', 'CU_NI', 'CU_PB', 'CU_RU', 'CU_SN', 'CU_ZN', 'EG_EB', 'FG_SA', 'HC_I',
+                'HC_J', 'HC_JM', 'HC_RB', 'I_J', 'I_JM', 'J_JM', 'L_EB', 'L_EG', 'L_PP', 'L_V', 'LU_BU', 'LU_PF',
+                'LU_PG', 'LU_TA', 'MA_EG', 'MA_L', 'MA_PP', 'MA_TA', 'NI_SS', 'NR_CF', 'NR_RU', 'OI_P', 'OI_Y',
+                'P_Y', 'PB_ZN', 'PF_EB', 'PF_EG', 'PF_L', 'PF_PG', 'PF_PP', 'PP_EB', 'PP_EG', 'PP_V', 'RB_FG',
+                'RB_I', 'RB_J', 'RB_JM', 'RM_B', 'RM_M', 'SC_BU', 'SC_FU', 'SC_LU', 'SC_PF', 'SC_TA', 'SF_SM',
+                'TA_EB', 'TA_EG', 'TA_PF', 'TA_PG', 'TA_PP', 'ZC_J', 'ZC_JM']
+  strategy_list = ['SMA', 'EMA', 'WMA', 'DEMA', 'KAMA', 'MESA', 'MIDPOINT', 'SAR', 'TRIMA', 'BollingerBand+TR',
+                  'BollingerBand+ATR', 'BollingerBand+NATR', 'MACD_', 'KDJ', 'APO', 'AROON', 'CCI', 'CMO', 'MOM',
+                  'ROC', 'RSI', 'TRIX', 'AD+KDJ', 'ADOSC', 'OBV']
+  strategy = 'KDJ'
+  for strategy in strategy_list:
+      IC_val(relate_list, strategy, time_aix)
+
+if __name__ == '__main__':
+  main()
