@@ -1,0 +1,38 @@
+
+import pyodbc
+import pandas as pd
+from sqlalchemy import create_engine
+__server = '10.0.53.244'
+__database = 'windDB2'
+__username = 'gdzg_loubl'
+__password = 'gdzg_loubl'
+cnxn = pyodbc.connect("DRIVER=SQL Server;\
+                             SERVER={};\
+                             DATABASE={};\
+                             UID={};PWD={};".format(__server, __database, __username, __password))# 提取所有的barra因子暴露
+# 提取所有的barra风格因子
+sql1 = "select barra_id, factor, data_date, exposure " \
+       "from barra_cnes5.dbo.t_asset_exposure_d " \
+       "where data_date >= 20220615 " \
+       "and data_date <= 20220615 " \
+       "order by data_date"
+
+sql2 = "select factor, dly_return, data_date " \
+       "from barra_cnes5.dbo.t_dly_fac_ret_d " \
+       "where data_date >= 20220615 " \
+       "and data_date <= 20220615 " \
+       "order by data_date"
+
+sql3 = "select barra_id, specific_return, data_date " \
+       "from barra_cnes5.dbo.t_asset_dly_spec_ret " \
+       "where data_date >= 20220615 " \
+       "and data_date <= 20220615 " \
+       "order by data_date"
+
+data1 = pd.read_sql(sql1, cnxn)
+data2 = pd.read_sql(sql2, cnxn)
+data3 = pd.read_sql(sql3, cnxn)
+
+data1.to_csv('E:/barra/exposure.csv', index = False)
+data2.to_csv('E:/barra/factorret.csv', index = False)
+data3.to_csv('E:/barra/specRet.csv', index = False)
