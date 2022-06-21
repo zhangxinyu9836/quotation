@@ -2,10 +2,10 @@
 import pyodbc
 import pandas as pd
 from sqlalchemy import create_engine
-__server = '10.0.53.244'
-__database = 'windDB2'
-__username = 'gdzg_loubl'
-__password = 'gdzg_loubl'
+__server = ''
+__database = ''
+__username = ''
+__password = ''
 cnxn = pyodbc.connect("DRIVER=SQL Server;\
                              SERVER={};\
                              DATABASE={};\
